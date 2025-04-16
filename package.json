@@ -1,0 +1,53 @@
+{
+  "name": "create_wallet",
+  "version": "1.0.0",
+  "description": "Multi-blockchain wallet generator with encryption",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "example": "ts-node src/example.ts",
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node scripts/dev.js",
+    "list": "node scripts/dev.js list",
+    "generate": "node scripts/dev.js generate",
+    "parse-prd": "node scripts/dev.js parse-prd"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^22.13.13",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@solana/wallet-adapter-base": "^0.9.25",
+    "@solana/web3.js": "^1.98.0",
+    "bitcoinjs-lib": "^6.1.7",
+    "bs58": "^6.0.0",
+    "ecpair": "^3.0.0",
+    "ethers": "^6.13.5",
+    "tiny-secp256k1": "^2.2.3",
+    "tronweb": "^6.0.2",
+    "wallet-address-validator": "^0.2.4",
+    "@anthropic-ai/sdk": "^0.39.0",
+    "boxen": "^8.0.1",
+    "chalk": "^4.1.2",
+    "commander": "^11.1.0",
+    "cli-table3": "^0.6.5",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.21.2",
+    "fastmcp": "^1.20.5",
+    "figlet": "^1.8.0",
+    "fuse.js": "^7.0.0",
+    "gradient-string": "^3.0.0",
+    "helmet": "^8.1.0",
+    "inquirer": "^12.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "lru-cache": "^10.2.0",
+    "openai": "^4.89.0",
+    "ora": "^8.2.0"
+  }
+}
