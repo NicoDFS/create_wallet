@@ -1,147 +1,212 @@
-# Crypto Wallet Generator
+# Multi-Blockchain Wallet Generator
 
-This project demonstrates how to create and manage Ethereum (EVM-compatible), Bitcoin, Solana, and Tron wallets with secure private key encryption. It's designed as an educational tool to understand the basics of cryptocurrency wallet generation and management.
+A TypeScript library for generating and managing secure cryptocurrency wallets across multiple blockchains with database integration and transaction tracking.
 
 ## Features
 
-- Generate Ethereum (EVM-compatible) wallets
-- Generate Bitcoin wallets (supports both mainnet and testnet)
-- Generate Solana wallets
-- Generate Tron wallets
-- Secure private key encryption using AES-256-CBC
-- Password-based key derivation using PBKDF2
-- Support for wallet decryption and recovery
+- **Multi-Chain Support**: Generate wallets for Ethereum (and EVM-compatible chains), Bitcoin, Solana, and Tron
+- **Chain ID Support**: Track EVM network chain IDs for cross-chain transactions
+- **Secure Encryption**: AES-256-CBC encryption for private keys
+- **Database Integration**: Store wallet information and transactions in MySQL database
+- **Transaction Tracking**: Record and track transactions with chain ID support for cross-chain swaps
+- **Mock Database**: Development mode with in-memory mock database for testing
 
-## Technical Details
+## Supported Blockchains
 
-### Security Features
+- **Ethereum** and EVM-compatible chains (Polygon, BSC, Arbitrum, Optimism, etc.)
+- **Bitcoin** (mainnet and testnet)
+- **Solana**
+- **Tron**
 
-- Uses `crypto` module for cryptographic operations
-- Implements PBKDF2 for key derivation with 100,000 iterations
-- Employs AES-256-CBC for private key encryption
-- Generates unique salt and IV for each wallet
-- Stores encrypted private keys instead of plaintext
+## Supported EVM Networks
 
-### Dependencies
+The library includes chain ID support for the following EVM networks:
 
-- `ethers`: For Ethereum wallet operations
-- `bitcoinjs-lib`: For Bitcoin wallet operations
-- `ecpair`: For Bitcoin key pair management
-- `tiny-secp256k1`: For Bitcoin cryptographic operations
-- `@solana/web3.js`: For Solana wallet operations
-- `bs58`: For Base58 encoding/decoding used by Solana
-- `tronweb`: For Tron wallet operations
+- Ethereum Mainnet (1)
+- Ethereum Goerli (5)
+- Ethereum Sepolia (11155111)
+- BSC Mainnet (56)
+- BSC Testnet (97)
+- Polygon Mainnet (137)
+- Polygon Mumbai (80001)
+- Arbitrum One (42161)
+- Arbitrum Nova (42170)
+- Optimism (10)
+- Avalanche C-Chain (43114)
+- Fantom (250)
 
 ## Installation
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
-## Usage
+## Configuration
 
-### Basic Usage
+Create a `.env` file in the root of the project:
+
+```
+# MySQL Database Configuration (Mock)
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=wallet_user
+DB_PASSWORD=dev_password
+DB_NAME=wallet_db
+DB_MOCK=true  # Set to true to use mock database, false for real MySQL
+
+# Application
+NODE_ENV=development
+PORT=3000
+API_SECRET=dev_secret_key
+```
+
+## Usage Examples
+
+### Basic Wallet Generation
+
+Generate wallets for all supported chains:
 
 ```typescript
-import WalletManager from './src';
+import WalletManager from './src/index';
 
-// Generate new wallets
-const password = 'YourSecurePassword123!';
+// Generate encrypted wallets
+const password = 'MySecurePassword123!';
 const wallets = WalletManager.generateWallets(password);
 
-// The wallets object contains Ethereum, Bitcoin, Solana, and Tron wallets:
 console.log('Ethereum Address:', wallets.ethereum.address);
 console.log('Bitcoin Address:', wallets.bitcoin.address);
 console.log('Solana Address:', wallets.solana.address);
 console.log('Tron Address:', wallets.tron.address);
 
-// Decrypt wallets
+// Decrypt wallets for verification
 WalletManager.decryptWallets(
   wallets.ethereum, 
   wallets.bitcoin, 
-  wallets.solana,
+  wallets.solana, 
   wallets.tron,
   password
 );
 ```
 
-### Individual Wallet Generation
+### Database Integration
 
-For Ethereum:
+Store and retrieve wallets with database integration:
+
 ```typescript
-import EthereumWalletGenerator from './src/walletGenerator';
+import { WalletService } from './src/services/WalletService';
+import { CHAIN_IDS } from './src/types/db';
 
-const ethWallet = EthereumWalletGenerator.generateEncryptedWallet('password');
+async function databaseExample() {
+  // Create a wallet service instance
+  const walletService = new WalletService();
+  
+  try {
+    // Connect to database
+    await walletService.init();
+    
+    // Generate wallets for a user
+    const userId = 'user123';
+    const password = 'SecurePassword123!';
+    const wallets = await walletService.generateAndStoreWallets(userId, password);
+    
+    console.log('Ethereum Address:', wallets.ethereum?.address);
+    
+    // Generate an Ethereum wallet for Polygon
+    const polygonWallet = await walletService.generateEthereumWallet(
+      userId,
+      password,
+      CHAIN_IDS.POLYGON_MAINNET
+    );
+    
+    console.log('Polygon Wallet Address:', polygonWallet.address);
+    
+    // Get all wallets for user
+    const storedWallets = await walletService.getWallets(userId);
+    console.log(`Found ${storedWallets.length} wallets`);
+    
+  } finally {
+    // Disconnect from database
+    await walletService.cleanup();
+  }
+}
 ```
 
-For Bitcoin:
+### Transaction Recording
+
+Record and retrieve transactions:
+
 ```typescript
-import BitcoinWalletGenerator from './src/bitcoinWalletGenerator';
+import { WalletService } from './src/services/WalletService';
+import { TransactionService } from './src/services/TransactionService';
+import { CHAIN_IDS } from './src/types/db';
 
-// Generate mainnet wallet (default)
-const btcWallet = BitcoinWalletGenerator.generateEncryptedWallet('password');
-
-// Or generate testnet wallet
-const testnetWallet = BitcoinWalletGenerator.generateEncryptedWallet('password', 'testnet');
+async function transactionExample() {
+  const walletService = new WalletService();
+  const transactionService = new TransactionService();
+  
+  try {
+    await walletService.init();
+    await transactionService.init();
+    
+    // Get user's Ethereum wallet
+    const userId = 'user123';
+    const wallets = await walletService.getWallets(userId);
+    const ethWallet = wallets.find(w => w.walletType === 'ethereum');
+    
+    if (ethWallet) {
+      // Record a transaction
+      const transaction = await transactionService.recordTransaction(
+        ethWallet.id,
+        'send',
+        ethWallet.address, // From address
+        '0x1234567890123456789012345678901234567890', // To address
+        '1.5', // Amount
+        'ETH', // Currency
+        '0.002', // Fee
+        'completed', // Status
+        '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890', // Hash
+        ethWallet.chainId // Chain ID
+      );
+      
+      // Get transactions
+      const transactions = await transactionService.getTransactionsByWallet(ethWallet.id);
+      console.log(`Found ${transactions.length} transactions`);
+    }
+  } finally {
+    await transactionService.cleanup();
+    await walletService.cleanup();
+  }
+}
 ```
 
-For Solana:
-```typescript
-import SolanaWalletGenerator from './src/solanaWalletGenerator';
+## Running Examples
 
-const solWallet = SolanaWalletGenerator.generateEncryptedWallet('password');
-```
-
-For Tron:
-```typescript
-import TronWalletGenerator from './src/tronWalletGenerator';
-
-const tronWallet = TronWalletGenerator.generateEncryptedWallet('password');
-```
-
-## Security Best Practices
-
-1. Always use strong passwords
-2. Never store private keys in plaintext
-3. Keep encrypted wallet data secure
-4. Don't share password or private keys
-5. Consider using hardware wallets for large amounts
-
-## Educational Notes
-
-### Understanding Wallet Generation
-
-- **Ethereum Wallets**: Use secp256k1 elliptic curve cryptography to generate key pairs
-- **Bitcoin Wallets**: Use the same curve but with different address formats and network parameters
-- **Solana Wallets**: Use Ed25519 curve for key generation
-- **Tron Wallets**: Use secp256k1 elliptic curve with a specific address format
-- Each blockchain implements different address derivation schemes
-
-### Private Key Encryption Process
-
-1. Generate random salt and IV
-2. Derive encryption key from password using PBKDF2
-3. Encrypt private key using AES-256-CBC
-4. Store encrypted key, salt, and IV
-
-## Development
-
-To run tests:
 ```bash
+# Basic wallet generation example
+npm run example
+
+# Database integration example
+npm run example:db
+```
+
+## Running Tests
+
+```bash
+# Run all tests
 npm test
+
+# Run wallet service tests only
+npm run test:wallet
+
+# Run transaction service tests only
+npm run test:transaction
 ```
 
-To build:
-```bash
-npm run build
-```
+## Mock vs. Real Database
 
-## Warning
-
-This is an educational project. While it implements proper cryptographic practices, it's recommended to use well-audited wallet solutions for handling real cryptocurrency assets.
+Set `DB_MOCK=true` in your `.env` file to use the in-memory mock database for development and testing.
+Set `DB_MOCK=false` to use a real MySQL database with the connection details specified in your `.env` file.
 
 ## License
 
-MIT
+ISC

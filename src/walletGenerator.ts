@@ -6,15 +6,17 @@ export interface EncryptedWallet {
   encryptedPrivateKey: string;
   salt: string;
   iv: string;
+  chainId?: number;
 }
 
 class EthereumWalletGenerator {
   /**
    * Generate a new Ethereum wallet with encrypted private key
    * @param password - Password used to encrypt the private key
+   * @param chainId - Optional chain ID for EVM networks
    * @returns EncryptedWallet object with address and encrypted details
    */
-  static generateEncryptedWallet(password: string): EncryptedWallet {
+  static generateEncryptedWallet(password: string, chainId?: number): EncryptedWallet {
     // Create a new Ethereum wallet
     const wallet = ethers.Wallet.createRandom();
 
@@ -44,7 +46,8 @@ class EthereumWalletGenerator {
       address: wallet.address,
       encryptedPrivateKey,
       salt,
-      iv: iv.toString('hex')
+      iv: iv.toString('hex'),
+      chainId
     };
   }
 
@@ -73,7 +76,9 @@ class EthereumWalletGenerator {
     decryptedPrivateKey += decipher.final('utf8');
 
     // Create and return a wallet from the decrypted private key
-    return new ethers.Wallet(decryptedPrivateKey);
+    const wallet = new ethers.Wallet(decryptedPrivateKey);
+    
+    return wallet;
   }
 
   /**
