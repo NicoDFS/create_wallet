@@ -62,6 +62,7 @@ export interface IWalletDatabase {
   getTransactionsByWallet(walletId: number): Promise<TransactionRecord[]>;
   getTransactionsByUser(userId: string): Promise<TransactionRecord[]>;
   getTransactionsByHash(hash: string): Promise<TransactionRecord | null>;
+  getTransactionsByStatus(status: TransactionRecord['status']): Promise<TransactionRecord[]>;
   updateTransaction(id: number, data: Partial<TransactionRecord>): Promise<boolean>;
 }
 

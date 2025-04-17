@@ -198,6 +198,15 @@ export class MockDatabase implements IWalletDatabase {
   }
 
   /**
+   * Get transactions by status
+   */
+  async getTransactionsByStatus(status: TransactionRecord['status']): Promise<TransactionRecord[]> {
+    this.ensureConnected();
+    
+    return this.transactions.filter(t => t.status === status);
+  }
+
+  /**
    * Update a transaction's details
    */
   async updateTransaction(id: number, data: Partial<TransactionRecord>): Promise<boolean> {

@@ -375,6 +375,25 @@ export class MySQLDatabase implements IWalletDatabase {
   }
 
   /**
+   * Get transactions by status
+   */
+  async getTransactionsByStatus(status: TransactionRecord['status']): Promise<TransactionRecord[]> {
+    this.ensureConnected();
+    
+    try {
+      const [rows] = await this.connection!.execute(
+        'SELECT * FROM transactions WHERE status = ? ORDER BY timestamp DESC',
+        [status]
+      );
+      
+      return this.mapRowToTransactionRecord(rows as mysql.RowDataPacket[]);
+    } catch (error) {
+      console.error('Failed to get transactions by status:', error);
+      throw new Error(`Failed to get transactions by status: ${(error as Error).message}`);
+    }
+  }
+
+  /**
    * Update a transaction's details
    */
   async updateTransaction(id: number, data: Partial<TransactionRecord>): Promise<boolean> {
